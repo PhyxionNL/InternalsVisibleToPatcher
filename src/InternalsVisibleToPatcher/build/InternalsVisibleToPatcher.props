@@ -1,0 +1,8 @@
+<Project>
+  <ItemDefinitionGroup>
+    <AddInternalsVisibleTo>
+      <Visible>false</Visible>
+      <AssemblyName></AssemblyName>
+    </AddInternalsVisibleTo>
+  </ItemDefinitionGroup>
+</Project>

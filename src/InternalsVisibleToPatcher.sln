@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11205.157
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InternalsVisibleToPatcher", "InternalsVisibleToPatcher\InternalsVisibleToPatcher.csproj", "{FFFAEEE5-E216-442C-9162-168AD30F57F5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{D43D3D13-84B1-4D21-8E36-52BED4056097}"
+	ProjectSection(SolutionItems) = preProject
+		Build\InternalsVisibleToPatcher.props = Build\InternalsVisibleToPatcher.props
+		Build\InternalsVisibleToPatcher.targets = Build\InternalsVisibleToPatcher.targets
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FFFAEEE5-E216-442C-9162-168AD30F57F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFFAEEE5-E216-442C-9162-168AD30F57F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFFAEEE5-E216-442C-9162-168AD30F57F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFFAEEE5-E216-442C-9162-168AD30F57F5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {93618651-EC7C-40FD-9683-C87FEC4A4947}
+	EndGlobalSection
+EndGlobal

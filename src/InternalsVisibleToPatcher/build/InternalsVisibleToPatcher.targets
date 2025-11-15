@@ -1,0 +1,48 @@
+<Project>
+  <PropertyGroup>
+    <InternalsVisibleToPatcher_TargetFramework Condition="'$(MSBuildRuntimeType)' == 'Core'">netstandard2.0</InternalsVisibleToPatcher_TargetFramework>
+    <InternalsVisibleToPatcher_TargetFramework Condition="'$(MSBuildRuntimeType)' != 'Core'">net462</InternalsVisibleToPatcher_TargetFramework>
+    <InternalsVisibleToPatcher_Assembly>$(MSBuildThisFileDirectory)../tools/$(InternalsVisibleToPatcher_TargetFramework)/InternalsVisibleToPatcher.dll</InternalsVisibleToPatcher_Assembly>
+    <InternalsVisibleToPatcher_IntermediatePath>$(IntermediateOutputPath)/InternalsVisibleToPatcher</InternalsVisibleToPatcher_IntermediatePath>
+    <InternalsVisibleToPatcher_ManifestFilePath>$(InternalsVisibleToPatcher_IntermediatePath)/InternalsVisibleToPatcher.manifest</InternalsVisibleToPatcher_ManifestFilePath>
+  </PropertyGroup>
+
+  <UsingTask AssemblyFile="$(InternalsVisibleToPatcher_Assembly)" TaskName="InternalsVisibleToPatcher.PatcherTask" />
+
+  <Target Name="GetInternalsVisibleToPatcherReferencePaths"
+          Inputs="$(MSBuildAllProjects)"
+          Outputs="$(InternalsVisibleToPatcher_ManifestFilePath)"
+          Returns="@(InternalsVisibleToPatcher_InputReferencePath);@(InternalsVisibleToPatcher_OutputReferencePath)">
+    <ItemGroup>
+      <InternalsVisibleToPatcher_ReferencePathJoin Include="@(ReferencePath)" AddInternalsVisibleTo="%(AddInternalsVisibleTo.Identity)" />
+      <InternalsVisibleToPatcher_InputReferencePath Include="@(InternalsVisibleToPatcher_ReferencePathJoin)" Condition=" '%(Filename)' == '%(AddInternalsVisibleTo)' " />
+      <InternalsVisibleToPatcher_ReferencePathJoin Remove="@(InternalsVisibleToPatcher_ReferencePathJoin)" />
+      <InternalsVisibleToPatcher_OutputReferencePath Include="@(InternalsVisibleToPatcher_InputReferencePath->'$(InternalsVisibleToPatcher_IntermediatePath)/%(Filename)%(Extension)')" OriginalItemSpec="%(Identity)" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(InternalsVisibleToPatcher_ManifestFilePath)" Lines="@(InternalsVisibleToPatcher_InputReferencePath)" WriteOnlyWhenDifferent="true" Overwrite="true" />
+  </Target>
+
+  <Target Name="InternalsVisibleToPatcher"
+          DependsOnTargets="GetInternalsVisibleToPatcherReferencePaths"
+          AfterTargets="AfterResolveReferences"
+          Inputs="@(InternalsVisibleToPatcher_InputReferencePath);$(InternalsVisibleToPatcher_ManifestFilePath)"
+          Outputs="@(InternalsVisibleToPatcher_OutputReferencePath)"
+          Returns="@(ReferencePath)">
+    <PatcherTask SourceReferences="@(ReferencePath)"
+                 AssemblyNames="@(AddInternalsVisibleTo)"
+                 AttributeAssemblyNames="@(AddInternalsVisibleTo->'%(AssemblyName)')"
+                 IntermediateOutputPath="$(InternalsVisibleToPatcher_IntermediatePath)" />
+    <ItemGroup>
+      <ReferencePath Include="@(InternalsVisibleToPatcher_OutputReferencePath)" />
+      <ReferencePath Remove="@(InternalsVisibleToPatcher_OutputReferencePath->'%(OriginalItemSpec)')" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="InternalsVisibleToPatcherClean" AfterTargets="Clean">
+    <ItemGroup>
+      <InternalsVisibleToPatcher_Directory Include="$(InternalsVisibleToPatcher_IntermediatePath)" />
+    </ItemGroup>
+    <RemoveDir Directories="@(InternalsVisibleToPatcher_Directory)" />
+  </Target>
+
+</Project>
