@@ -12,6 +12,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>Adds InternalsVisibleTo attributes to assemblies to access their internals</Description>
     <PackageTags>InternalsVisibleTo</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <BuildOutputTargetFolder>tools/$(TargetFramework)</BuildOutputTargetFolder>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludePackageDependencies</TargetsForTfmSpecificBuildOutput>
@@ -20,6 +21,10 @@
 
   <ItemGroup>
     <Content Include="build\*" PackagePath="build" /> 
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
