@@ -11,6 +11,8 @@ namespace AssemblyPatcher;
 
 public class PatcherTask : Task
 {
+    public ITaskItem[] AddVirtualTo { get; set; }
+
     [Required]
     public ITaskItem[] AssemblyNames { get; set; }
 
@@ -20,7 +22,7 @@ public class PatcherTask : Task
     [Required]
     public string IntermediateOutputPath { get; set; }
 
-    public ITaskItem[] RemoveSealed { get; set; }
+    public ITaskItem[] RemoveSealedFrom { get; set; }
 
     [Required]
     public ITaskItem[] SourceReferences { get; set; }
@@ -36,8 +38,11 @@ public class PatcherTask : Task
         if (AssemblyNames != null)
             assemblies.UnionWith(AssemblyNames.Select(a => a.ItemSpec));
 
-        if (RemoveSealed != null)
-            assemblies.UnionWith(RemoveSealed.Select(a => a.ItemSpec));
+        if (RemoveSealedFrom != null)
+            assemblies.UnionWith(RemoveSealedFrom.Select(a => a.ItemSpec));
+
+        if (AddVirtualTo != null)
+            assemblies.UnionWith(AddVirtualTo.Select(a => a.ItemSpec));
 
         foreach (string target in assemblies)
         {
@@ -61,12 +66,22 @@ public class PatcherTask : Task
             }
 
             // Remove sealed.
-            if (RemoveSealed != null)
+            if (RemoveSealedFrom != null)
             {
-                foreach (ITaskItem item in RemoveSealed.Where(x => x.ItemSpec == target))
+                foreach (ITaskItem item in RemoveSealedFrom.Where(x => x.ItemSpec == target))
                 {
                     string typeNames = item.GetMetadata("TypeNames");
                     RemoveSealedFromTypes(module, targetAssemblyPath, typeNames);
+                }
+            }
+
+            // Add virtual to members.
+            if (AddVirtualTo != null)
+            {
+                foreach (ITaskItem item in AddVirtualTo.Where(x => x.ItemSpec == target))
+                {
+                    string memberNames = item.GetMetadata("MemberNames");
+                    AddVirtualToMembers(module, targetAssemblyPath, memberNames);
                 }
             }
 
@@ -89,21 +104,12 @@ public class PatcherTask : Task
 
     private void RemoveSealedFromTypes(ModuleDefMD module, string targetAssemblyPath, string typeNames)
     {
-        string[] patterns = (typeNames ?? "*").Split([';'], StringSplitOptions.RemoveEmptyEntries)
-                                              .Select(x => x.Trim()).ToArray();
-
-        Regex[] regexes = patterns.Select(x =>
-        {
-            string escaped = Regex.Escape(x).Replace("\\*", ".*");
-            return new Regex($"^{escaped}$");
-        }).ToArray();
-
-        bool Matches(string typeName) => regexes.Any(x => x.IsMatch(typeName));
-
+        Func<string, bool> matches = CreateMatcher(typeNames);
         int count = 0;
+
         foreach (TypeDef type in module.Types)
         {
-            if (type.IsSealed && Matches(type.FullName))
+            if (type.IsSealed && matches(type.FullName))
             {
                 type.IsSealed = false;
                 count++;
@@ -111,6 +117,69 @@ public class PatcherTask : Task
         }
 
         Log.LogMessage(MessageImportance.Normal, $"Removed 'sealed' from {count} types in '{targetAssemblyPath}' matching patterns: {typeNames}");
+    }
+
+    private void AddVirtualToMembers(ModuleDefMD module, string targetAssemblyPath, string memberNames)
+    {
+        Func<string, bool> matches = CreateMatcher(memberNames);
+        int count = 0;
+
+        foreach (TypeDef type in module.Types)
+        {
+            // Methods.
+            foreach (MethodDef method in type.Methods)
+            {
+                if (matches(method.DeclaringType.FullName + "::" + method.Name))
+                    MakeVirtual(method);
+            }
+
+            // Properties.
+            foreach (PropertyDef prop in type.Properties)
+            {
+                if (matches(prop.DeclaringType.FullName + "::" + prop.Name))
+                {
+                    MakeVirtual(prop.GetMethod);
+                    MakeVirtual(prop.SetMethod);
+                }
+            }
+
+            // Events.
+            foreach (EventDef evt in type.Events)
+            {
+                if (matches(evt.DeclaringType.FullName + "::" + evt.Name))
+                {
+                    MakeVirtual(evt.AddMethod);
+                    MakeVirtual(evt.RemoveMethod);
+                    MakeVirtual(evt.InvokeMethod);
+                }
+            }
+        }
+
+        void MakeVirtual(MethodDef method)
+        {
+            if (method is { IsVirtual: false, IsStatic: false, IsConstructor: false, IsAbstract: false, IsPrivate: false })
+            {
+                method.Attributes |= MethodAttributes.Virtual;
+                method.Attributes &= ~MethodAttributes.Final;
+                count++;
+            }
+        }
+
+        Log.LogMessage(MessageImportance.Normal, $"Added 'virtual' to {count} members in '{targetAssemblyPath}' matching patterns: {memberNames}");
+    }
+
+    private static Func<string, bool> CreateMatcher(string patternsInput)
+    {
+        string[] patterns = (patternsInput ?? "*").Split([';'], StringSplitOptions.RemoveEmptyEntries)
+                                                  .Select(x => x.Trim()).ToArray();
+
+        Regex[] regexes = patterns.Select(x =>
+        {
+            string escaped = Regex.Escape(x).Replace("\\*", ".*");
+            return new Regex($"^{escaped}$");
+        }).ToArray();
+
+        return value => regexes.Any(r => r.IsMatch(value));
     }
 
     private static string GetFullFilePath(string basePath, string path) => Path.IsPathRooted(path) ? Path.GetFullPath(path) : Path.Combine(basePath, path);
