@@ -1,4 +1,4 @@
-# AssemblyPatcher
+# AssemblyPatcher [![Nuget](https://img.shields.io/nuget/v/AssemblyPatcher)](https://www.nuget.org/packages/AssemblyPatcher/)
 
 An MSBuild task that modifies existing assemblies to add [InternalsVisibleTo](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.internalsvisibletoattribute) attributes, remove `sealed` modifiers, or add `virtual` keywords.
 
