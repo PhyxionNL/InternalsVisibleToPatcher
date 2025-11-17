@@ -1,9 +1,11 @@
 # AssemblyPatcher
 
-An MSBuild task that adds [InternalsVisibleTo](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.internalsvisibletoattribute) attributes or removes sealed modifiers from existing assemblies.
+An MSBuild task that modifies existing assemblies to add [InternalsVisibleTo](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.internalsvisibletoattribute) attributes, remove `sealed` modifiers, or add `virtual` keywords.
 
-# Usage
-First add the [NuGet package](https://www.nuget.org/packages/AssemblyPatcher) to your project:
+## Usage
+
+Add the NuGet package to your project:
+
 ```xml
 <PackageReference Include="AssemblyPatcher">
    <PrivateAssets>all</PrivateAssets>
@@ -11,40 +13,34 @@ First add the [NuGet package](https://www.nuget.org/packages/AssemblyPatcher) to
 </PackageReference>
 ```
 
-To add an ```InternalsVisibleToAttribute``` to ```SomeAssembly``` with ```OwnAssembly``` as assembly name, define an ```ItemGroup``` with the following:
+Add an InternalsVisibleTo attribute to `SomeAssembly` with `OwnAssembly` as the assembly name:
+
 ```xml
 <ItemGroup>
    <AddInternalsVisibleTo Include="SomeAssembly" AssemblyName="OwnAssembly" />
 </ItemGroup>
 ```
 
-To remove sealed modifiers from types in ```SomeAssembly```, define an ```ItemGroup``` with the following:
+Remove `sealed` modifiers from types in `SomeAssembly`:
+
 ```xml
 <ItemGroup>
    <RemoveSealedFrom Include="SomeAssembly" />
-</ItemGroup>
-```
-
-You can also filter the types:
-```xml
-<ItemGroup>
+   <!-- or filtered -->
    <RemoveSealedFrom Include="SomeAssembly" TypeNames="SomeAssembly.TypeA;SomeAssembly.Folder.*" />
 </ItemGroup>
 ```
 
-To add virtual modifier to types in ```SomeAssembly```, define an ```ItemGroup``` with the following:
+Add `virtual` keywords in `SomeAssembly`:
+
 ```xml
 <ItemGroup>
    <AddVirtualTo Include="SomeAssembly" />
+   <!-- or filtered -->
+   <AddVirtualTo Include="SomeAssembly" MemberNames="SomeAssembly.TypeA;SomeAssembly.Types::Member*" />
 </ItemGroup>
 ```
 
-You can also filter the types (uses dnlib notiation):
-```xml
-<ItemGroup>
-   <AddVirtualTo Include="SomeAssembly" MemberNames="SomeAssembly.TypeA;SomeAssembly.Folder::Member*" />
-</ItemGroup>
-```
+## License
 
-# License
 MIT
