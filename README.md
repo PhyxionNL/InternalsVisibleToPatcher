@@ -18,17 +18,31 @@ To add an ```InternalsVisibleToAttribute``` to ```SomeAssembly``` with ```OwnAss
 </ItemGroup>
 ```
 
-To remove sealed modifiers from all types in ```SomeAssembly```, define an ```ItemGroup``` with the following:
+To remove sealed modifiers from types in ```SomeAssembly```, define an ```ItemGroup``` with the following:
 ```xml
 <ItemGroup>
-   <RemoveSealed Include="SomeAssembly" />
+   <RemoveSealedFrom Include="SomeAssembly" />
 </ItemGroup>
 ```
 
 You can also filter the types:
 ```xml
 <ItemGroup>
-   <RemoveSealed Include="SomeAssembly" TypeNames="SomeAssembly.TypeA;SomeAssembly.Folder.*" />
+   <RemoveSealedFrom Include="SomeAssembly" TypeNames="SomeAssembly.TypeA;SomeAssembly.Folder.*" />
+</ItemGroup>
+```
+
+To add virtual modifier to types in ```SomeAssembly```, define an ```ItemGroup``` with the following:
+```xml
+<ItemGroup>
+   <AddVirtualTo Include="SomeAssembly" />
+</ItemGroup>
+```
+
+You can also filter the types (uses dnlib notiation):
+```xml
+<ItemGroup>
+   <AddVirtualTo Include="SomeAssembly" MemberNames="SomeAssembly.TypeA;SomeAssembly.Folder::Member*" />
 </ItemGroup>
 ```
 
