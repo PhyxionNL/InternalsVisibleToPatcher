@@ -25,5 +25,12 @@ To remove sealed modifiers from all types in ```SomeAssembly```, define an ```It
 </ItemGroup>
 ```
 
+You can also filter the types:
+```xml
+<ItemGroup>
+   <RemoveSealed Include="SomeAssembly" TypeNames="SomeAssembly.TypeA;SomeAssembly.Folder.*" />
+</ItemGroup>
+```
+
 # License
 MIT

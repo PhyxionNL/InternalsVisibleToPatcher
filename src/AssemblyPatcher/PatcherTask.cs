@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using dnlib.DotNet;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -60,8 +61,14 @@ public class PatcherTask : Task
             }
 
             // Remove sealed.
-            if (RemoveSealed != null && RemoveSealed.Any(x => x.ItemSpec == target))
-                RemoveSealedFromTypes(module, targetAssemblyPath);
+            if (RemoveSealed != null)
+            {
+                foreach (ITaskItem item in RemoveSealed.Where(x => x.ItemSpec == target))
+                {
+                    string typeNames = item.GetMetadata("TypeNames");
+                    RemoveSealedFromTypes(module, targetAssemblyPath, typeNames);
+                }
+            }
 
             module.Write(targetAssemblyPath);
         }
@@ -80,15 +87,30 @@ public class PatcherTask : Task
         Log.LogMessage(MessageImportance.Normal, $"Added 'InternalsVisibleToAttribute' for '{assemblyName}' in '{targetAssemblyPath}'");
     }
 
-    private void RemoveSealedFromTypes(ModuleDefMD module, string targetAssemblyPath)
+    private void RemoveSealedFromTypes(ModuleDefMD module, string targetAssemblyPath, string typeNames)
     {
+        string[] patterns = (typeNames ?? "*").Split([';'], StringSplitOptions.RemoveEmptyEntries)
+                                              .Select(x => x.Trim()).ToArray();
+
+        Regex[] regexes = patterns.Select(x =>
+        {
+            string escaped = Regex.Escape(x).Replace("\\*", ".*");
+            return new Regex($"^{escaped}$");
+        }).ToArray();
+
+        bool Matches(string typeName) => regexes.Any(x => x.IsMatch(typeName));
+
+        int count = 0;
         foreach (TypeDef type in module.Types)
         {
-            if (type.IsSealed)
+            if (type.IsSealed && Matches(type.FullName))
+            {
                 type.IsSealed = false;
+                count++;
+            }
         }
 
-        Log.LogMessage(MessageImportance.Normal, $"Removed 'sealed' from all types in '{targetAssemblyPath}'");
+        Log.LogMessage(MessageImportance.Normal, $"Removed 'sealed' from {count} types in '{targetAssemblyPath}' matching patterns: {typeNames}");
     }
 
     private static string GetFullFilePath(string basePath, string path) => Path.IsPathRooted(path) ? Path.GetFullPath(path) : Path.Combine(basePath, path);
