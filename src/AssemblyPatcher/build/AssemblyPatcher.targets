@@ -14,8 +14,8 @@
           Outputs="$(AssemblyPatcher_ManifestFilePath)"
           Returns="@(AssemblyPatcher_InputReferencePath);@(AssemblyPatcher_OutputReferencePath)">
     <ItemGroup>
-      <AssemblyPatcher_ReferencePathJoin Include="@(ReferencePath)" AddInternalsVisibleTo="%(AddInternalsVisibleTo.Identity)" RemoveSealedFrom="%(RemoveSealedFrom.Identity)" AddVirtualTo="%(AddVirtualTo.Identity)" />
-      <AssemblyPatcher_InputReferencePath Include="@(AssemblyPatcher_ReferencePathJoin)" Condition=" '%(Filename)' == '%(AddInternalsVisibleTo)' Or '%(Filename)' == '%(RemoveSealedFrom)' Or '%(Filename)' == '%(AddVirtualTo)' " />
+      <AssemblyPatcher_ReferencePathJoin Include="@(ReferencePath)" AddInternalsVisibleTo="%(AddInternalsVisibleTo.Identity)" RemoveSealedFrom="%(RemoveSealedFrom.Identity)" AddVirtualTo="%(AddVirtualTo.Identity)" MakePublic="%(MakePublic.Identity)" />
+      <AssemblyPatcher_InputReferencePath Include="@(AssemblyPatcher_ReferencePathJoin)" Condition=" '%(Filename)' == '%(AddInternalsVisibleTo)' Or '%(Filename)' == '%(RemoveSealedFrom)' Or '%(Filename)' == '%(AddVirtualTo)' Or '%(Filename)' == '%(MakePublic)' " />
       <AssemblyPatcher_ReferencePathJoin Remove="@(AssemblyPatcher_ReferencePathJoin)" />
       <AssemblyPatcher_OutputReferencePath Include="@(AssemblyPatcher_InputReferencePath->'$(AssemblyPatcher_IntermediatePath)/%(Filename)%(Extension)')" OriginalItemSpec="%(Identity)" />
     </ItemGroup>
@@ -33,6 +33,7 @@
                  AttributeAssemblyNames="@(AddInternalsVisibleTo->'%(AssemblyName)')"
                  RemoveSealedFrom="@(RemoveSealedFrom)"
                  AddVirtualTo="@(AddVirtualTo)"
+                 MakePublic="@(MakePublic)"
                  IntermediateOutputPath="$(AssemblyPatcher_IntermediatePath)" />
     <ItemGroup>
       <ReferencePath Include="@(AssemblyPatcher_OutputReferencePath)" />

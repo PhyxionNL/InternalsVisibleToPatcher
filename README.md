@@ -41,6 +41,16 @@ Add `virtual` keywords in `SomeAssembly`:
 </ItemGroup>
 ```
 
+Change access modifiers to `public` in `SomeAssembly`:
+
+```xml
+<ItemGroup>
+   <MakePublic Include="SomeAssembly" />
+   <!-- or filtered -->
+   <MakePublic Include="SomeAssembly" MemberNames="SomeAssembly.TypeA;SomeAssembly.Types::Member*" />
+</ItemGroup>
+```
+
 ## License
 
 MIT

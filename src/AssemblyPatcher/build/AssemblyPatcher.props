@@ -12,5 +12,9 @@
       <Visible>False</Visible>
       <MemberNames></MemberNames>
     </AddVirtualTo>
+    <MakePublic>
+      <Visible>False</Visible>
+      <MemberNames></MemberNames>
+    </MakePublic>
   </ItemDefinitionGroup>
 </Project>

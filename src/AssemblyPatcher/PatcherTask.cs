@@ -27,6 +27,8 @@ public class PatcherTask : Task
     [Required]
     public ITaskItem[] SourceReferences { get; set; }
 
+    public ITaskItem[] MakePublic { get; set; }
+
     public override bool Execute()
     {
         if (SourceReferences == null)
@@ -43,6 +45,9 @@ public class PatcherTask : Task
 
         if (AddVirtualTo != null)
             assemblies.UnionWith(AddVirtualTo.Select(a => a.ItemSpec));
+
+        if (MakePublic != null)
+            assemblies.UnionWith(MakePublic.Select(a => a.ItemSpec));
 
         foreach (string target in assemblies)
         {
@@ -88,6 +93,16 @@ public class PatcherTask : Task
                 }
             }
 
+            // Make members public.
+            if (MakePublic != null)
+            {
+                foreach (ITaskItem item in MakePublic.Where(x => x.ItemSpec == target))
+                {
+                    string memberNames = item.GetMetadata("MemberNames");
+                    MakeMembersPublic(module, targetAssemblyPath, memberNames);
+                }
+            }
+
             module.Write(targetAssemblyPath);
         }
 
@@ -128,12 +143,12 @@ public class PatcherTask : Task
         Func<string, bool> matches = CreateMatcher(memberNames);
         int count = 0;
 
-        foreach (TypeDef type in module.Types)
+        foreach (TypeDef type in module.GetTypes())
         {
             // Methods.
             foreach (MethodDef method in type.Methods)
             {
-                if (matches(method.DeclaringType.FullName + "::" + method.Name) && MakeVirtual(method))
+                if (matches(method.DeclaringType.FullName + "::" + method.Name) && MakeMethodVirtual(method))
                     count++;
             }
 
@@ -142,10 +157,10 @@ public class PatcherTask : Task
             {
                 if (matches(prop.DeclaringType.FullName + "::" + prop.Name))
                 {
-                    if (MakeVirtual(prop.GetMethod))
+                    if (MakeMethodVirtual(prop.GetMethod))
                         count++;
 
-                    if (MakeVirtual(prop.SetMethod))
+                    if (MakeMethodVirtual(prop.SetMethod))
                         count++;
                 }
             }
@@ -155,13 +170,13 @@ public class PatcherTask : Task
             {
                 if (matches(evt.DeclaringType.FullName + "::" + evt.Name))
                 {
-                    if (MakeVirtual(evt.AddMethod))
+                    if (MakeMethodVirtual(evt.AddMethod))
                         count++;
 
-                    if (MakeVirtual(evt.RemoveMethod))
+                    if (MakeMethodVirtual(evt.RemoveMethod))
                         count++;
 
-                    if (MakeVirtual(evt.InvokeMethod))
+                    if (MakeMethodVirtual(evt.InvokeMethod))
                         count++;
                 }
             }
@@ -171,12 +186,78 @@ public class PatcherTask : Task
             Log.LogMessage(MessageImportance.Normal, $"Added 'virtual' to {count} members in '{targetAssemblyPath}' matching patterns: {memberNames}");
     }
 
-    private static bool MakeVirtual(MethodDef method)
+    private void MakeMembersPublic(ModuleDefMD module, string targetAssemblyPath, string memberNames)
+    {
+        Func<string, bool> matches = CreateMatcher(memberNames);
+        int count = 0;
+
+        foreach (TypeDef type in module.GetTypes())
+        {
+            // Methods.
+            foreach (MethodDef method in type.Methods)
+            {
+                if (matches(method.DeclaringType.FullName + "::" + method.Name) && MakeMethodPublic(method))
+                    count++;
+            }
+
+            // Properties.
+            foreach (PropertyDef prop in type.Properties)
+            {
+                if (matches(prop.DeclaringType.FullName + "::" + prop.Name))
+                {
+                    if (MakeMethodPublic(prop.GetMethod))
+                        count++;
+
+                    if (MakeMethodPublic(prop.SetMethod))
+                        count++;
+                }
+            }
+
+            // Events.
+            foreach (EventDef evt in type.Events)
+            {
+                if (matches(evt.DeclaringType.FullName + "::" + evt.Name))
+                {
+                    if (MakeMethodPublic(evt.AddMethod))
+                        count++;
+
+                    if (MakeMethodPublic(evt.RemoveMethod))
+                        count++;
+
+                    if (MakeMethodPublic(evt.InvokeMethod))
+                        count++;
+                }
+            }
+        }
+
+        if (count > 0)
+            Log.LogMessage(MessageImportance.Normal, $"Made {count} members public in '{targetAssemblyPath}' matching patterns: {memberNames}");
+    }
+
+    private static bool MakeMethodVirtual(MethodDef method)
     {
         if (method is { IsVirtual: false, IsStatic: false, IsConstructor: false, IsAbstract: false, IsPrivate: false })
         {
             method.IsFinal = false;
             method.IsVirtual = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool MakeMethodPublic(MethodDef method)
+    {
+        if (method == null)
+            return false;
+
+        if (method.IsPublic)
+            return false;
+
+        if (method.IsPrivate || method.IsFamily || method.IsAssembly || method.IsFamilyAndAssembly || method.IsFamilyOrAssembly)
+        {
+            method.Attributes &= ~MethodAttributes.MemberAccessMask;
+            method.Attributes |= MethodAttributes.Public;
             return true;
         }
 
