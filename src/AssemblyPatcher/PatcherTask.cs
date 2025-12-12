@@ -55,7 +55,7 @@ public class PatcherTask : Task
 
             string assemblyPath = GetFullFilePath(IntermediateOutputPath, assembly.ItemSpec);
             string targetAssemblyPath = Path.Combine(IntermediateOutputPath, Path.GetFileName(assemblyPath));
-            var module = ModuleDefMD.Load(assemblyPath);
+            using var module = ModuleDefMD.Load(assemblyPath);
 
             // Add InternalsVisibleTo.
             if (AssemblyNames != null)
@@ -89,7 +89,6 @@ public class PatcherTask : Task
             }
 
             module.Write(targetAssemblyPath);
-            module.Dispose();
         }
 
         return true;
@@ -129,7 +128,7 @@ public class PatcherTask : Task
         Func<string, bool> matches = CreateMatcher(memberNames);
         int count = 0;
 
-        foreach (TypeDef type in module.GetTypes())
+        foreach (TypeDef type in module.Types)
         {
             // Methods.
             foreach (MethodDef method in type.Methods)
@@ -143,10 +142,10 @@ public class PatcherTask : Task
             {
                 if (matches(prop.DeclaringType.FullName + "::" + prop.Name))
                 {
-                    if (MakeVirtual(prop.GetMethod)) 
+                    if (MakeVirtual(prop.GetMethod))
                         count++;
 
-                    if (MakeVirtual(prop.SetMethod)) 
+                    if (MakeVirtual(prop.SetMethod))
                         count++;
                 }
             }
@@ -156,13 +155,13 @@ public class PatcherTask : Task
             {
                 if (matches(evt.DeclaringType.FullName + "::" + evt.Name))
                 {
-                    if (MakeVirtual(evt.AddMethod)) 
+                    if (MakeVirtual(evt.AddMethod))
                         count++;
 
                     if (MakeVirtual(evt.RemoveMethod))
                         count++;
 
-                    if (MakeVirtual(evt.InvokeMethod)) 
+                    if (MakeVirtual(evt.InvokeMethod))
                         count++;
                 }
             }
@@ -174,10 +173,10 @@ public class PatcherTask : Task
 
     private static bool MakeVirtual(MethodDef method)
     {
-        if (method is { IsVirtual: false, IsStatic: false, IsFinal: true, IsConstructor: false, IsAbstract: false, IsPrivate: false })
+        if (method is { IsVirtual: false, IsStatic: false, IsConstructor: false, IsAbstract: false, IsPrivate: false })
         {
-            method.IsVirtual = true;
             method.IsFinal = false;
+            method.IsVirtual = true;
             return true;
         }
 

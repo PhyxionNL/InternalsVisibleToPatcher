@@ -44,7 +44,7 @@
           DependsOnTargets="PatchAssemblies"
           AfterTargets="CopyFilesToOutputDirectory">
     <Copy SourceFiles="@(AssemblyPatcher_OutputReferencePath)"
-          DestinationFiles="@(AssemblyPatcher_InputReferencePath->'$(OutputPath)%(Filename)%(Extension)')"
+          DestinationFiles="@(AssemblyPatcher_OutputReferencePath->'$(OutputPath)%(Filename)%(Extension)')"
           OverwriteReadOnlyFiles="True"
           SkipUnchangedFiles="False" />
   </Target>
@@ -53,7 +53,7 @@
           DependsOnTargets="PatchAssemblies"
           AfterTargets="Publish">
     <Copy SourceFiles="@(AssemblyPatcher_OutputReferencePath)"
-          DestinationFiles="@(AssemblyPatcher_InputReferencePath->'$(PublishDir)%(Filename)%(Extension)')"
+          DestinationFiles="@(AssemblyPatcher_OutputReferencePath->'$(PublishDir)%(Filename)%(Extension)')"
           OverwriteReadOnlyFiles="True"
           SkipUnchangedFiles="False" />
   </Target>
